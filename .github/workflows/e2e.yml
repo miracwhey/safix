@@ -1,0 +1,55 @@
+# E2E Smoke — advisory, manuell getriggert.
+#
+# ⚠️ NIEMALS in "CI" umbenennen: deploy.yml gated per workflow_run auf den
+# Workflow-NAMEN "CI". Ein rotes E2E darf den Deploy nicht blocken, solange
+# das Harness nicht als stabil promoted ist.
+#
+# Erste Ausbaustufe: workflow_dispatch only + continue-on-error. Promotion zu
+# PR-Trigger/required erst nach nachgewiesener Stabilität (bewusste Entscheidung,
+# kein Versehen). Ziel-URL ist ein Vercel-Preview-Deploy (Test-Mode-Stripe) —
+# lokal läuft das Harness gegen `vercel dev` (npm run test:e2e).
+name: E2E Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Ziel-URL (Vercel-Preview). Leer = Secret E2E_BASE_URL.'
+        required: false
+        default: ''
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run smoke journeys
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ inputs.base_url != '' && inputs.base_url || secrets.E2E_BASE_URL }}
+          SMOKE_CUSTOMER_EMAIL: ${{ secrets.SMOKE_CUSTOMER_EMAIL }}
+          SMOKE_CUSTOMER_PASSWORD: ${{ secrets.SMOKE_CUSTOMER_PASSWORD }}
+          SMOKE_CRAFTSMAN_EMAIL: ${{ secrets.SMOKE_CRAFTSMAN_EMAIL }}
+          SMOKE_CRAFTSMAN_PASSWORD: ${{ secrets.SMOKE_CRAFTSMAN_PASSWORD }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run test:e2e
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14

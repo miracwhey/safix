@@ -1,0 +1,12 @@
+{
+  "name": "@fixup/capacitor-roomplan",
+  "version": "0.1.0",
+  "description": "Capacitor plugin for Apple RoomPlan LiDAR scanning",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  EXTERNAL STEP REQUIRED:
+	  In Xcode → Signing & Capabilities → + Capability → Associated Domains,
+	  add these same domains. Xcode will then reference this file automatically.
+	  Also set your Team and provisioning profile there.
+	-->
+	<!--
+	  Sign in with Apple (2026-07-06).
+	  EXTERNAL STEPS REQUIRED:
+	  1. developer.apple.com → Identifiers → app.fixup.main → Capability
+	     "Sign In with Apple" aktivieren (Xcode automatic signing regeneriert
+	     das Provisioning-Profil beim nächsten Build).
+	  2. Supabase Dashboard → Auth → Sign In/Providers → Apple aktivieren,
+	     Client IDs = app.fixup.main (nativer id_token-Flow, kein Secret nötig).
+	-->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.safix.digital</string>
+		<string>webcredentials:app.safix.digital</string>
+	</array>
+	<!--
+	  aps-environment: APNs target.
+	  - "production" → Live-APNs (api.push.apple.com). Matched mit der
+	    Edge-Function `notify-push` Env `APNS_ENVIRONMENT=production`
+	    (Block N13.NOTIFY, live seit 2026-05-03).
+	  - "development" → Sandbox-APNs (api.sandbox.push.apple.com). Nur für
+	    Xcode-Debug-Builds gegen ein Sandbox-Device — dann muss zusätzlich
+	    in Supabase `APNS_ENVIRONMENT=sandbox` temporär gesetzt werden,
+	    sonst BadDeviceToken (server-side prod ↔ device-token sandbox).
+	  Wenn die "Push Notifications"-Capability in Xcode aktiv ist, signt
+	  Xcode den Wert gegen die Apple-Developer-Team-ID (KXJRXU59ZB).
+	  Hardcode "production" matcht den Live-N13.NOTIFY-Stand.
+	-->
+	<key>aps-environment</key>
+	<string>production</string>
+</dict>
+</plist>

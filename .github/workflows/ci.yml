@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Type-check, Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:ci
+
+      - name: Dependency security audit
+        # --omit=dev: gate on prod-shippable advisories only. Dev/build-tooling
+        # CVEs (e.g. @babel/core sourceMappingURL file-read at build time) do not
+        # ship to users and were blocking main + every PR on a transitive bump.
+        # Prod-scoped highs still fail the build; dev highs stay visible in
+        # `npm audit` without gating merges.
+        run: npm audit --audit-level=high --omit=dev

@@ -1,0 +1,62 @@
+-- =============================================================================
+-- Migration: profiles – is_operator per-user elevated access flag
+-- =============================================================================
+-- BLOCK 35 COMPLETION: Closes the per-user elevated access gap.
+--
+-- BEFORE:
+--   Elevated dispute-resolution actions (release / refund / split) were gated
+--   solely by the VITE_ADMIN_MODE environment variable.  This is acceptable for
+--   a supervised pilot but not a clean production-oriented access model because:
+--     • access cannot be granted or revoked per user at runtime
+--     • the env flag is process-wide – it either applies to all users or none
+--     • there is no DB-level record of who holds elevated access
+--
+-- AFTER:
+--   profiles.is_operator boolean NOT NULL DEFAULT false
+--
+--   A user with is_operator = true and craftsmanRole = 'owner' may perform
+--   elevated operational actions such as dispute resolution.
+--
+--   VITE_ADMIN_MODE is retained as a secondary override for local development
+--   and controlled pilot deployments where per-user DB management is not yet
+--   practical.  Its role is now clearly secondary:
+--     canAccessDisputeResolution = isOwnerCraftsman AND (is_operator OR isAdminMode)
+--
+-- Rationale for boolean rather than a role column:
+--   The existing profiles.role ('customer' | 'craftsman') plus
+--   profiles.craftsman_role ('owner' | 'worker') already covers the main
+--   product tiers.  Operator elevation is a narrow, rare grant (typically a
+--   handful of people) so a simple boolean flag is the smallest clean change
+--   without introducing a full role column or RBAC table.
+--
+-- RLS: No changes required.  The is_operator column is read-only at the app
+-- layer (session load); it does not appear in any user-facing upsert path.
+-- Operator-level grants are made via direct DB administration or a future
+-- internal backoffice tool.
+--
+-- All statements are idempotent (IF NOT EXISTS guards).
+-- =============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. Add is_operator column to profiles
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS is_operator boolean NOT NULL DEFAULT false;
+
+-- Index is deliberately omitted: this column is read on login (single-row
+-- equality lookup by user id), never used as a filter across many rows.
+
+-- =============================================================================
+-- BLOCK 35 COMPLETION SUMMARY
+-- =============================================================================
+-- After this migration:
+--   • profiles.is_operator stores the per-user elevated operator grant.
+--   • app-layer: session.isOperator is populated from this column on every
+--     session load via getMyProfile() → refreshSession().
+--   • canAccessDisputeResolution(session) now uses:
+--       isOwnerCraftsman(session) && (session.isOperator || isAdminMode())
+--   • Granting a user operator access: UPDATE profiles SET is_operator = true
+--     WHERE id = '<user-uuid>';
+--   • VITE_ADMIN_MODE remains a secondary override (local dev / pilot).
+-- =============================================================================

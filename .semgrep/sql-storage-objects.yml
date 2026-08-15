@@ -1,0 +1,32 @@
+rules:
+  - id: no-raw-storage-objects-delete
+    languages:
+      - generic
+    severity: ERROR
+    message: >-
+      Raw `DELETE FROM storage.objects` only removes the Postgres metadata row —
+      the underlying S3 blob is left orphaned and keeps billing forever
+      (build-gap: feedback_supabase_storage_delete_leaks_blob). Storage cleanup
+      MUST go through the Storage HTTP API
+      (supabase.storage.from(bucket).remove([...])) or the hybrid pg_cron +
+      Edge-Function (pg_net) pattern that mirrors account-cascade-cleanup. Never
+      delete storage rows directly in SQL. If this is an already-applied,
+      immutable migration, baseline it or add `-- nosemgrep:
+      no-raw-storage-objects-delete` with a justification.
+    # Line-anchored so only statement-position deletes match — the many
+    # protective comments that *mention* the anti-pattern (lines starting with
+    # --, *, //) are intentionally excluded.
+    pattern-regex: '(?im)^\s*delete\s+from\s+"?storage"?\s*\.\s*"?objects"?'
+    paths:
+      include:
+        - '/supabase/migrations/*.sql'
+        - '/scripts/**'
+        - '/supabase/functions/**'
+      # These applied historical migrations introduced the legacy raw-delete
+      # functions. Migration 20260602120000_spatial_scan_storage_gc.sql drops
+      # both functions and replaces them with Storage HTTP API cleanup. Keep
+      # the immutable history intact while ensuring every current/new path is
+      # still scanned.
+      exclude:
+        - '/supabase/migrations/20260518000040_spatial_storage_lifecycle_cron.sql'
+        - '/supabase/migrations/20260518000072_spatial_p0_review_fixes_main.sql'

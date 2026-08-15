@@ -1,0 +1,5 @@
+# Session-Tokens (Supabase access/refresh) — niemals committen
+storageState/
+# Playwright-Artefakte
+test-results/
+playwright-report/

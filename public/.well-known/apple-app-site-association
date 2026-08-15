@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["KXJRXU59ZB.app.fixup.main"],
+        "components": [
+          { "/": "/auth/callback*" },
+          { "/": "/auth/reset-password*" },
+          { "/": "/payout-return*" },
+          { "/": "/payout-refresh*" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["KXJRXU59ZB.app.fixup.main"]
+  }
+}

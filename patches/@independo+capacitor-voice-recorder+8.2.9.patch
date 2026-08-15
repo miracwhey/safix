@@ -1,0 +1,41 @@
+diff --git a/node_modules/@independo/capacitor-voice-recorder/Package.swift b/node_modules/@independo/capacitor-voice-recorder/Package.swift
+index 1111111..2222222 100644
+--- a/node_modules/@independo/capacitor-voice-recorder/Package.swift
++++ b/node_modules/@independo/capacitor-voice-recorder/Package.swift
+@@ -20,3 +20,6 @@
+                 .product(name: "Cordova", package: "capacitor-swift-pm")
+             ],
+-            path: "ios/Sources/VoiceRecorder"),
++            path: "ios/Sources/VoiceRecorder",
++            resources: [
++                .copy("PrivacyInfo.xcprivacy")
++            ]),
+diff --git a/node_modules/@independo/capacitor-voice-recorder/ios/Sources/VoiceRecorder/PrivacyInfo.xcprivacy b/node_modules/@independo/capacitor-voice-recorder/ios/Sources/VoiceRecorder/PrivacyInfo.xcprivacy
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/node_modules/@independo/capacitor-voice-recorder/ios/Sources/VoiceRecorder/PrivacyInfo.xcprivacy
+@@ -0,0 +1,23 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>NSPrivacyTracking</key>
++	<false/>
++	<key>NSPrivacyTrackingDomains</key>
++	<array/>
++	<key>NSPrivacyCollectedDataTypes</key>
++	<array/>
++	<key>NSPrivacyAccessedAPITypes</key>
++	<array>
++		<dict>
++			<key>NSPrivacyAccessedAPIType</key>
++			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
++			<key>NSPrivacyAccessedAPITypeReasons</key>
++			<array>
++				<string>C617.1</string>
++			</array>
++		</dict>
++	</array>
++</dict>
++</plist>

@@ -1,0 +1,62 @@
+# FixUp Supabase Local Development Configuration
+#
+# This config controls the local Supabase instance used during development.
+# Production settings are managed through the Supabase Dashboard.
+#
+# KEY AUTH SETTING: email confirmations are disabled so that signup with
+# email/password works immediately without requiring the user to click a
+# confirmation link in their inbox.  This is critical for the development
+# and testing workflow described in the project requirements.
+#
+# To enable email confirmation in production, set:
+#   [auth.email]
+#   enable_confirmations = true
+
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/gate", "http://localhost:5173/auth/callback", "http://localhost:5173/auth/reset-password"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = false
+secure_password_change = false
+
+[auth.external.google]
+enabled = false
+
+# ── Edge Function JWT verification (M12) ─────────────────────────────────────
+# Pinned so `supabase functions deploy` cannot drift from the intended per-
+# function auth posture (previously Dashboard-only / unversioned). Values match
+# the live prod deployment (verified via list_edge_functions 2026-07-06).
+#   verify_jwt=false → service/cron/webhook triggered (pg_net, pg_cron, service
+#     role, or push-fanout secret) — these carry no end-user JWT.
+#   verify_jwt=true  → invoked from the client with the user session.
+[functions.account-cascade-cleanup]
+verify_jwt = false
+
+[functions.chat-thread-migrator]
+verify_jwt = false
+
+[functions.notify-push]
+verify_jwt = false
+
+[functions.spatial-convert-done-push]
+verify_jwt = false
+
+[functions.spatial-enqueue-convert]
+verify_jwt = true
+
+[functions.spatial-mesh-cleanup]
+verify_jwt = false
+
+[functions.spatial-parametric-cleanup]
+verify_jwt = false
+
+[functions.spatial-scan-cleanup]
+verify_jwt = false
+
+[functions.transcode-portfolio-video]
+verify_jwt = false

@@ -1,0 +1,11 @@
+# vercel dev Watcher + CLI-Upload-Ausschluss.
+# .claude enthält Agent-Worktrees (190k+ Dateien) — ohne Ignore crasht der
+# vercel-dev-FSWatcher mit EMFILE (E2E-Harness, 2026-06-12).
+# Deploys laufen über die Git-Integration; für die ist diese Datei irrelevant.
+.claude
+ios
+build
+android/.gradle
+android/build
+e2e/test-results
+e2e/playwright-report

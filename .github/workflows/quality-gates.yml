@@ -1,0 +1,86 @@
+# Additive, non-required quality gates. MUST NOT be named "CI" — deploy.yml's
+# workflow_run trigger keys on the workflow named exactly "CI", so this file is
+# invisible to the deploy chain and cannot block production deploys or merges.
+# It stays advisory until Leon adds these checks to branch-protection.
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    # Official image ships semgrep preinstalled — no local/npm install needed,
+    # so a missing `npm run semgrep` script can never break this job.
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep scan
+        # OSS rulesets, no SEMGREP_APP_TOKEN required.
+        # OBSERVE-ONLY: continue-on-error keeps the gate from spuriously
+        # blocking while findings are triaged. Remove it (and add this check to
+        # branch protection) to promote Semgrep to a real blocking gate.
+        continue-on-error: true
+        run: semgrep ci
+        env:
+          SEMGREP_RULES: >-
+            p/typescript
+            p/react
+            p/owasp-top-ten
+            p/secrets
+
+  pgtap:
+    name: pgTAP (Supabase RLS/RPC)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect pgTAP tests
+        id: guard
+        # Stays a green no-op until supabase/tests/*.sql exist, so adding this
+        # workflow now does not produce a confusing red/empty check.
+        run: |
+          if [ -n "$(find supabase/tests -name '*.sql' 2>/dev/null | head -1)" ]; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+            echo "No supabase/tests/**/*.sql found — skipping pgTAP."
+          fi
+      - uses: supabase/setup-cli@v1
+        if: steps.guard.outputs.has_tests == 'true'
+        with:
+          version: latest
+      - name: Build test schema from prod baseline
+        if: steps.guard.outputs.has_tests == 'true'
+        # The supabase/migrations chain is NOT buildable from an empty database
+        # (systemic repo<->prod drift), so `supabase start` cannot apply it. Build
+        # the test DB from a faithful prod-schema snapshot instead — only in the CI
+        # runner; the real migrations on disk are untouched. See supabase/baseline/
+        # for the dump + the ACL/trigger/function fidelity overlay that
+        # reconstructs prod's revoked grant posture.
+        run: |
+          rm -f supabase/migrations/*.sql
+          cp supabase/baseline/00_schema.sql                 supabase/migrations/20200101000000_schema.sql
+          cp supabase/baseline/01_prod_grants_overlay.sql    supabase/migrations/20200101000001_grants.sql
+          cp supabase/baseline/02_prod_function_grants.sql   supabase/migrations/20200101000002_fns.sql
+          # 03 = Block-P5 payments FSM+authority trigger + finalize rewrite (applied
+          # to prod 2026-06-17). Replayed last so test 06 (finalize lives) + test 10
+          # (payment-FSM guard) run against the hardened schema. Idempotent overlay.
+          cp supabase/baseline/03_payments_fsm_p5_overlay.sql supabase/migrations/20200101000003_p5_payments_fsm.sql
+          # 04 = feature_flags table + RLS (operator-only write, public read),
+          # applied to prod 2026-06-29 AFTER the schema dump. Replayed so test 11
+          # (feature_flags RLS) runs against the real table. Idempotent overlay.
+          cp supabase/baseline/04_feature_flags_overlay.sql supabase/migrations/20200101000004_feature_flags.sql
+      - name: Start local Supabase stack
+        if: steps.guard.outputs.has_tests == 'true'
+        run: supabase start
+      - name: Run pgTAP tests
+        if: steps.guard.outputs.has_tests == 'true'
+        run: supabase test db

@@ -1,0 +1,47 @@
+-- =============================================================================
+-- Migration: Stripe webhook event deduplication hardening
+-- =============================================================================
+--
+-- Context
+-- -------
+-- stripe_webhook_events was created in migration 20240102000000 with
+-- event_id TEXT PRIMARY KEY (enforcing uniqueness at the DB level).
+--
+-- The webhook handler (api/stripe-webhook.ts) has been updated to use a
+-- claim-first deduplication pattern:
+--
+--   1. INSERT INTO stripe_webhook_events WITH outcome='processing' at the
+--      very start of reconciliation.
+--   2. On PK conflict (code 23505) → another delivery already claimed this
+--      event → skip immediately without any payment reads/writes.
+--   3. On success → proceed with payment reconciliation.
+--   4. UPDATE the row to the final outcome after reconciliation completes.
+--
+-- This eliminates the previous SELECT → check → UPDATE TOCTOU window.
+--
+-- New outcome values used by the handler:
+--   processing         — in-flight claim; updated to final outcome on completion
+--   invalid_transition — state-machine guard rejected the transition
+--   failed             — DB write error during payment update
+--
+-- These are in addition to the existing outcomes:
+--   reconciled, skipped, not_found, log_only
+--
+-- Operational cleanup
+-- -------------------
+-- Rows with outcome='processing' that are older than a few minutes indicate
+-- an interrupted handler invocation.  The index below enables efficient
+-- cleanup queries and monitoring dashboards.
+--
+-- Example cleanup query:
+--   SELECT * FROM stripe_webhook_events
+--   WHERE outcome = 'processing'
+--     AND processed_at < extract(epoch from now() - interval '10 minutes') * 1000;
+--
+-- =============================================================================
+
+-- Index for fast lookups by outcome (cleanup queries, stuck-processing alerts,
+-- backoffice dashboards).
+CREATE INDEX IF NOT EXISTS idx_stripe_webhook_events_outcome
+  ON public.stripe_webhook_events (outcome)
+  WHERE outcome IN ('processing', 'failed', 'invalid_transition');

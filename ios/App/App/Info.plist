@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>de</string>
+	<key>CFBundleDisplayName</key>
+	<string>SaFix</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SaFix benötigt Zugriff auf deine Fotos, um Bilder für Projekte, Schadensdokumentation und dein Profil auszuwählen.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SaFix benötigt Kamerazugriff, um Fotos für Auftragsfortschritt, Abschlussbilder und Projektdokumentation aufzunehmen sowie für das 3D-Aufmaß-Scanning per Apple RoomPlan, das Räume per LiDAR vermisst und ein 3D-Modell für präzise Angebote erstellt.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SaFix benötigt Mikrofonzugriff, um Sprachnachrichten im Chat sowie Sprach-Notizen zu Raum-Pins aufzunehmen und um Tonspuren für Videos zu erfassen, die du direkt in der App aufnimmst.</string>
+	<key>NSWorldSensingUsageDescription</key>
+	<string>SaFix benötigt Zugriff auf Apple RoomPlan, um per LiDAR die Geometrie eines Raumes zu vermessen und ein 3D-Modell für präzise Aufmaße und Angebote zu erstellen. Dabei wird ausschließlich der Raum gescannt, keine Personen erkannt oder identifiziert.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>SaFix nutzt die Bewegungssensoren, um beim 3D-Aufmaß-Scanning per RoomPlan die Bewegung des Geräts zu erfassen und die Position des iPhones im Raum zu bestimmen.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.fixup.main</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app.fixup.main</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

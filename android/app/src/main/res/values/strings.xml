@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SaFix</string>
+    <string name="title_activity_main">SaFix</string>
+    <string name="package_name">app.fixup.main</string>
+    <string name="custom_url_scheme">app.fixup.main</string>
+</resources>

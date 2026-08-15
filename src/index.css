@@ -1,0 +1,537 @@
+@import "tailwindcss";
+
+/* ─── Design Token System ──────────────────────────────────────────────────── */
+/* Source of truth for all UI decisions.                                        */
+/* Usage: bg-brand, text-ink, border-edge, rounded-card, shadow-elevated etc.  */
+
+@theme {
+  /* Colors */
+  --color-brand:   #2563EB;
+  --color-surface: #FFFFFF;
+  --color-canvas:  #F4F5F8;
+
+  --color-ink:       #0F172A;
+  --color-ink-sub:   #475569;
+  --color-ink-muted: #94A3B8;
+  --color-edge:      #E2E8F0;
+
+  --color-warn:    #D97706;
+  --color-ok:      #059669;
+  --color-danger:  #DC2626;
+  --color-neutral: #64748B;
+
+  /* Radius — three values only */
+  --radius-container: 16px;
+  --radius-card:      12px;
+  --radius-chip:      9999px;
+
+  /* Shadows — two levels only */
+  --shadow-subtle:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+
+  /* Pro subscription UI tokens */
+  --color-brand-deep: #1D4ED8;
+  --color-brand-tint: #EEF2FB;
+  --color-pro-gold:   #FFD27A;
+
+  /* Semantic tone tokens — used by SubscriptionStatusPill + Infoboxes */
+  --color-tone-success-fg: #0E7C57;
+  --color-tone-success-bg: #E2F1EA;
+  --color-tone-warning-fg: #B45309;
+  --color-tone-warning-bg: #FBEFD9;
+  --color-tone-danger-fg:  #B23939;
+  --color-tone-danger-bg:  #F7E2DE;
+  --color-tone-info-fg:    #2563EB;
+  --color-tone-info-bg:    #E5ECF7;
+  --color-tone-muted-fg:   #5A6178;
+  --color-tone-muted-bg:   #ECEDF1;
+
+  /* Brand glow — replaces 4× duplicated inline shadow */
+  --shadow-brand-glow: 0 8px 20px -8px rgba(37,99,235,0.5);
+
+  /* ─── Motion easing ──────────────────────────────────────────────────────
+     Motion-Standard v1 + Loading-Patterns handoff. Exactly three curves —
+     Tailwind v4 maps the --ease-* namespace to `ease-smooth`/`ease-spring`/
+     `ease-liquid` utilities. smooth = the DS default (iOS ease-out, no
+     overshoot); spring overshoots once (never on money); liquid = soft, long
+     transitions (cold-start, glass, rubber-band). */
+  --ease-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-liquid: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* SF Pro Display stack — drives the `font-sf-display` utility used in the
+     spatial customer Beispiel-Raum sheet (Mockup 03 v3 measurements cells).
+     Falls back through Apple system → ui-sans-serif on non-Apple browsers. */
+  --font-sf-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── Legacy vars — backward compat during migration ──────────────────────── */
+/* Remove as each component migrates to @theme tokens.                          */
+:root {
+  color-scheme: light;
+  --app-bg: #f5f6fa;
+  --bottom-nav-h: max(80px, calc(env(safe-area-inset-bottom, 0px) + 64px));
+  --bottom-nav-immersive-h: max(50px, calc(env(safe-area-inset-bottom, 0px) + 42px));
+  /* Live on-screen keyboard height, published by useKeyboardInset so a fixed
+     composer can ride the keyboard (bottom: var(--keyboard-height)). */
+  --keyboard-height: 0px;
+  --text: #0f172a;
+  --muted: #64748b;
+  --card: #ffffff;
+  --blue: #2563eb;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --radius: 24px;
+
+  /* Icon sizes for Lucide */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+
+  /* ─── Motion duration tokens ────────────────────────────────────────────
+     Loading-Patterns handoff. Four steps + shimmer. Use as var() in inline
+     animation/transition shorthand and in the fx-* classes below; Tailwind
+     arbitrary utilities (duration-[350ms]) may reference the same numbers. */
+  --dur-instant:    150ms;  /* press, tap-feedback */
+  --dur-quick:      250ms;  /* toggle, tab, card-tap */
+  --dur-moderate:   350ms;  /* sheet, skeleton → content, push/pop */
+  --dur-expressive: 500ms;  /* card → detail morph, stagger appear */
+  --dur-shimmer:   1400ms;  /* skeleton shimmer loop */
+}
+
+/* ─── z-index convention ─────────────────────────────────────────────────────
+ * Keep stacking explicit and collision-free. Floors:
+ *   z-30  fixed Header (AppShell top slot)
+ *   z-40  BottomNav (AppShell bottom)
+ *   z-50  standard overlays — sheets, modals, dropdowns, lightboxes, toasts.
+ *         MUST be ≥ z-50 to paint OVER the BottomNav. Never give a full-screen
+ *         overlay/backdrop z-40 (ties with the nav → nav bleeds through).
+ *   z-60…z-80  stacked layers inside an already-open overlay
+ *         (e.g. Explore: lightbox 60 → comments 70 → save 75 → report 80).
+ * Any new overlay defaults to z-50 unless it must stack above another overlay.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+html {
+  height: 100%;
+  background-color: var(--app-bg);
+  /* Stop WKWebView from auto-inflating font sizes on orientation/dynamic-type
+     changes — keeps our token-driven type scale stable. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+#root {
+  min-height: 100%;
+  background-color: var(--app-bg);
+}
+
+body {
+  min-height: 100%;
+  /* AppShell screens scroll in an inner container (.app-shell-scroll) that is
+     exactly viewport-high, so the body never overflows there — body scroll
+     only remains for surfaces without AppShell. */
+  overscroll-behavior-y: auto;
+  margin: 0;
+  background-color: var(--app-bg);
+  color: var(--text);
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+}
+
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* While the keyboard is up it covers the home indicator, so the composer's
+   safe-area bottom pad becomes dead space that detaches the bar from the
+   keyboard top — collapse it to a flush gap. */
+html[data-keyboard-open] .chat-composer-root,
+html[data-keyboard-open] [data-kb-pinned-composer] {
+  padding-bottom: 8px;
+}
+
+/* Press-and-hold on the mic / recording overlay must NOT trigger iOS text
+   selection, the callout menu, or the grey tap highlight over the waveform. */
+.voice-no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* AppShell inner scroll container (Block 3 scroll-twofer). Legacy property,
+   but still the explicit opt-in for iOS momentum scrolling on older WebKit;
+   harmless no-op elsewhere. Overflow/height live as Tailwind utilities on
+   the AppShell root (h-[100dvh] overflow-y-auto overscroll-contain). */
+.app-shell-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Keyboard-only focus ring — pointer interactions stay clean (tap-highlight
+   reset above), keyboard/AT users get a visible brand-colored outline. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* ─── Page transition ─────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fadeIn {
+  animation: fadeIn 120ms ease-out;
+}
+
+/* ─── Bottom-sheet entrance ──────────────────────────────────────────────────
+ * Panel slides up from offscreen; backdrop fades in. Entrance-only (no exit
+ * animation) — the portal unmounts on close. Transform/opacity only → stays on
+ * the GPU compositor. Respects prefers-reduced-motion below. */
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-sheet-slide-up {
+  animation: sheet-slide-up 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes sheet-backdrop-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-sheet-backdrop-fade {
+  animation: sheet-backdrop-fade 220ms ease-out;
+}
+
+/* ─── Story-Viewer Progress Bar ──────────────────────────────────────────── */
+@keyframes storyProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ─── Liquid Glass (iOS 26 style) ────────────────────────────────────────── */
+
+/* Light variant — default screens (light backgrounds) */
+.liquid-glass-light {
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255,255,255,0.72) 0%,
+      rgba(255,255,255,0.48) 40%,
+      rgba(255,255,255,0.36) 100%
+    );
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.8),
+    inset 0 -0.5px 0 0 rgba(255,255,255,0.3),
+    0 8px 40px -6px rgba(0,0,0,0.12),
+    0 2px 8px -2px rgba(0,0,0,0.06);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+}
+
+.liquid-glass-active-light {
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255,255,255,0.7) 0%,
+      rgba(255,255,255,0.4) 100%
+    );
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.9),
+    0 2px 12px -2px rgba(0,0,0,0.08);
+  animation: glassActivateLight 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* Dark variant — immersive/Reels (dark backgrounds) */
+.liquid-glass-dark {
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255,255,255,0.1) 0%,
+      rgba(255,255,255,0.03) 40%,
+      rgba(255,255,255,0.01) 100%
+    );
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255,255,255,0.14),
+    0 4px 20px -4px rgba(0,0,0,0.4);
+  backdrop-filter: blur(32px) saturate(1.6) brightness(1.05);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6) brightness(1.05);
+}
+
+.liquid-glass-active-dark {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: inset 0 0.5px 0 0 rgba(255,255,255,0.18);
+  animation: glassActivateDark 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* Bar variants — bottom-anchored tab bars (full width, border-top only) */
+.liquid-glass-bar-light {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.82) 0%,
+      rgba(255,255,255,0.66) 100%
+    );
+  border-top: 1px solid rgba(15,23,42,0.06);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.9),
+    0 -6px 24px -10px rgba(15,23,42,0.08);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+}
+
+.liquid-glass-bar-dark {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0,0,0,0) 0%,
+      rgba(0,0,0,0.42) 100%
+    );
+  border-top: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+}
+
+@keyframes glassActivateLight {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glassActivateDark {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ─── Reels Tab Crossfade ────────────────────────────────────────────────── */
+/* Used by /explore when the user toggles For-You ↔ Inspiration. Pure
+ * opacity (no transform) so the scroll-snap container does not visibly
+ * shift. Respect prefers-reduced-motion: skip the animation entirely. */
+@keyframes reelTabFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.reel-tab-fade-in {
+  animation: reelTabFadeIn 200ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel-tab-fade-in { animation: none; }
+}
+
+/* Reels-Feed-Container darf keinen sichtbaren Browser-Scroll-Indikator
+ * zeigen — die vertikale Schnapp-Liste ist ihr eigenes UI. */
+.reels-no-scrollbar { scrollbar-width: none; }
+.reels-no-scrollbar::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* ─── Reels Engagement Animations (Block 3) ──────────────────────────────── */
+/* Heart-Pop: TikTok/Insta-typischer Bounce beim Like-Toggle. Wird per
+ * `key`-bump auf dem Heart-Element getriggert; React mountet das Element
+ * neu und startet damit die einmalige Animation. */
+@keyframes heart-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-heart-pop {
+  animation: heart-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+/* Bookmark-Pop: subtiler — kleinere Skala-Spitze. */
+@keyframes bookmark-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.animate-bookmark-pop {
+  animation: bookmark-pop 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+
+/* Count-Tick: subtle slide-up beim Counter-Wechsel. */
+@keyframes count-tick {
+  0%   { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-count-tick {
+  animation: count-tick 220ms ease-out;
+}
+
+/* Heart-Burst-Overlay: Insta-Double-Tap-Effekt — großes Heart erscheint
+ * an Tap-Position, schwillt an, fadet aus. */
+@keyframes heart-burst {
+  0%   { opacity: 0; transform: scale(0.4); }
+  30%  { opacity: 1; transform: scale(1.4); }
+  60%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.0); }
+}
+.animate-heart-burst {
+  animation: heart-burst 720ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .liquid-glass-active-light,
+  .liquid-glass-active-dark,
+  .animate-pulse,
+  .animate-sheet-slide-up,
+  .animate-sheet-backdrop-fade,
+  .animate-heart-pop,
+  .animate-bookmark-pop,
+  .animate-count-tick,
+  .animate-heart-burst {
+    animation: none;
+  }
+}
+
+/* Chat skeletons + media-pending shimmer now use the canonical `.fx-skeleton`
+ * sweep / `fx-skeleton-sweep` keyframe (Loading-Patterns section above). The
+ * former `shimmer` + `chatSkeletonShimmer` keyframes and `.chat-skeleton` rules
+ * were removed — one shimmer system app-wide. */
+
+/* ─── Block D Chat — Bubble status-icon transition (ADR D-6) ────────────────
+ * 4-stage status (pending → sent → delivered → read). Cyan-jump on read is
+ * the most-noticed change; we cross-fade with a tiny scale tick for haptic
+ * feel without violating the transform/opacity-only floor. */
+@keyframes chatStatusTick {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.chat-status-tick {
+  animation: chatStatusTick 180ms ease-out;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-status-tick { animation: none; }
+}
+
+/* Spatial CAD Lane V1.5.1 · Empty-State-Tile pulse (Mockup 01 v2 spec)
+ * Yellow focus-glow signals "hier starten" to first-time customers. */
+@keyframes spatialTilePulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(252,211,77,0.4); }
+  50%      { box-shadow: 0 0 0 4px rgba(252,211,77,0.65), 0 0 20px rgba(252,211,77,0.5); }
+}
+.spatial-tile-pulse {
+  animation: spatialTilePulse 1.8s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-tile-pulse { animation: none; box-shadow: 0 0 0 2px rgba(252,211,77,0.55); }
+}
+
+/* ═══ Loading-Patterns · canonical motion vocabulary ═════════════════════════
+ * One system for every loading/pending surface (Design handoff 2026-07-06).
+ * transform/opacity only → stays on the WKWebView GPU compositor. Every class
+ * has a prefers-reduced-motion fallback at the bottom of this section. */
+
+/* ── Spinner (the one arc) ─────────────────────────────────────────────────
+ * Driven by <Spinner>. Rotation only. --spin-dur lets callers tune speed
+ * (button pending 0.7s, standalone 0.8s) without a new keyframe. */
+@keyframes fx-spin { to { transform: rotate(360deg); } }
+.fx-spin {
+  transform-origin: center;
+  animation: fx-spin var(--spin-dur, 0.8s) linear infinite;
+}
+
+/* ── Skeleton shimmer (diagonal sweep) ─────────────────────────────────────
+ * Canonical replacement for the 3 parallel shimmer systems + bare
+ * animate-pulse. Put .fx-skeleton on a `position:relative;overflow:hidden`
+ * container whose placeholder blocks use `background: var(--skel-base)`. */
+:root {
+  --skel-base: #DDE3EE;
+  --skel-hi: rgba(255,255,255,0.85);
+}
+@keyframes fx-skeleton-sweep {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.fx-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 32%, var(--skel-hi), transparent 68%);
+  transform: translateX(-120%);
+  animation: fx-skeleton-sweep var(--dur-shimmer) ease-in-out infinite;
+  will-change: transform;
+}
+
+/* ── Button success morph (D2) — spring overshoot, confirming moments only ── */
+@keyframes fx-success-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  62%  { transform: scale(1.09); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-fx-success-pop { animation: fx-success-pop var(--dur-expressive) var(--ease-spring) both; }
+
+/* ── Calm check (payment / money) — no overshoot ──────────────────────────── */
+@keyframes fx-check-pop {
+  from { transform: scale(0.62); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.animate-fx-check-pop { animation: fx-check-pop var(--dur-quick) var(--ease-smooth) both; }
+
+/* ── Skeleton → content crossfade rows ────────────────────────────────────── */
+@keyframes fx-content-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fx-content-in { animation: fx-content-in var(--dur-moderate) var(--ease-liquid) both; }
+
+/* ── Brand-mark breathe (cold-start, large loaders) ───────────────────────── */
+@keyframes fx-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.055); }
+}
+.animate-fx-breathe { animation: fx-breathe 2.6s ease-in-out infinite; }
+
+/* ── Cold-start mark assemble (Variante C) ────────────────────────────────── */
+@keyframes fx-pop-calm {
+  from { transform: scale(0.62); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.animate-fx-pop-calm { animation: fx-pop-calm var(--dur-expressive) var(--ease-liquid) both; }
+
+/* ── Liquid appear (handoff to first screen) ──────────────────────────────── */
+@keyframes fx-appear {
+  from { opacity: 0; transform: scale(1.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fx-appear { animation: fx-appear var(--dur-expressive) var(--ease-liquid) both; }
+
+/* ── Inline dots (playful, verspielt) ─────────────────────────────────────── */
+@keyframes fx-dot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40%           { transform: translateY(-7px); opacity: 1; }
+}
+.animate-fx-dot { animation: fx-dot 1.2s ease-in-out infinite; }
+
+/* Resurrect the 4 dead `animate-fade-in` call-sites (TopCraftsmen, QuickHelp,
+ * InspirationGrid, EscrowInfo) — the keyframe was named `fadeIn`, so the
+ * hyphenated class matched nothing. Alias fixes them without a rename sweep. */
+.animate-fade-in { animation: fadeIn var(--dur-instant) var(--ease-smooth); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-spin { animation-duration: 1.2s; }               /* keep a slow turn as the only motion cue */
+  .fx-skeleton::after { animation: none; opacity: 0.5; transform: translateX(0); }
+  .animate-fx-success-pop,
+  .animate-fx-check-pop,
+  .animate-fx-content-in,
+  .animate-fx-breathe,
+  .animate-fx-pop-calm,
+  .animate-fx-appear,
+  .animate-fx-dot,
+  .animate-fade-in { animation: none; }
+}

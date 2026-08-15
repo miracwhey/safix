@@ -1,0 +1,49 @@
+diff --git a/node_modules/@capacitor/filesystem/Package.swift b/node_modules/@capacitor/filesystem/Package.swift
+index 1111111..2222222 100644
+--- a/node_modules/@capacitor/filesystem/Package.swift
++++ b/node_modules/@capacitor/filesystem/Package.swift
+@@ -22,3 +22,6 @@
+                 .product(name: "IONFilesystemLib", package: "ion-ios-filesystem")
+             ],
+-            path: "ios/Sources/FilesystemPlugin"),
++            path: "ios/Sources/FilesystemPlugin",
++            resources: [
++                .copy("PrivacyInfo.xcprivacy")
++            ]),
+diff --git a/node_modules/@capacitor/filesystem/ios/Sources/FilesystemPlugin/PrivacyInfo.xcprivacy b/node_modules/@capacitor/filesystem/ios/Sources/FilesystemPlugin/PrivacyInfo.xcprivacy
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/node_modules/@capacitor/filesystem/ios/Sources/FilesystemPlugin/PrivacyInfo.xcprivacy
+@@ -0,0 +1,31 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>NSPrivacyTracking</key>
++	<false/>
++	<key>NSPrivacyTrackingDomains</key>
++	<array/>
++	<key>NSPrivacyCollectedDataTypes</key>
++	<array/>
++	<key>NSPrivacyAccessedAPITypes</key>
++	<array>
++		<dict>
++			<key>NSPrivacyAccessedAPIType</key>
++			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
++			<key>NSPrivacyAccessedAPITypeReasons</key>
++			<array>
++				<string>C617.1</string>
++			</array>
++		</dict>
++		<dict>
++			<key>NSPrivacyAccessedAPIType</key>
++			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
++			<key>NSPrivacyAccessedAPITypeReasons</key>
++			<array>
++				<string>85F4.1</string>
++			</array>
++		</dict>
++	</array>
++</dict>
++</plist>

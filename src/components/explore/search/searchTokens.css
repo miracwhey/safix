@@ -1,0 +1,74 @@
+/*
+ * Search-screen design tokens.
+ *
+ * Scoped to `.fxsearch` so the redesigned in-reels search screen can use inline
+ * `style={{ ... var(--x) ... }}` exactly like the Claude-Design mock, without
+ * leaking these variables into (or depending on) any global design system.
+ *
+ * Values mirror the mock's colors.css 1:1.
+ */
+
+.fxsearch {
+  /* blues */
+  --blue-50: #EFF4FF;
+  --blue-100: #DBE6FE;
+  --blue-200: #BFD3FE;
+  --blue-500: #2563EB;
+  --blue-600: #1D4ED8;
+  --blue-700: #1E40AF;
+
+  /* slate scale */
+  --slate-950: #0C1322;
+  --slate-900: #0F172A;
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748B;
+  --slate-400: #94A3B8;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50: #F8FAFC;
+
+  /* surfaces / edges */
+  --edge: #E6EAF2;
+  --app-bg: #E4E7EF;
+  --panel: #F4F6FB;
+  --white: #FFFFFF;
+
+  /* semantic */
+  --success-500: #16A34A;
+  --success-50: #ECFDF3;
+  --danger-500: #DC2626;
+  --danger-50: #FEF2F2;
+
+  /* aliases */
+  --accent: #2563EB;
+  --text-strong: #0F172A;
+  --text-body: #475569;
+  --text-muted: #94A3B8;
+  --border-strong: #E2E8F0;
+
+  /* fields */
+  --field-bg: #FFFFFF;
+  --field-border: #E6EAF2;
+  --field-text: #0F172A;
+  --field-radius: 14px;
+
+  /* shadows + easing */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.07);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* fonts */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Skeleton shimmer now uses the canonical global `.fx-skeleton` (index.css);
+   the former scoped scfix-shimmer/scfix-pulse keyframes were removed. */
+
+/* Hide scrollbars on horizontal/vertical scroll strips, like the mock. */
+.fxsearch .scfix-nobar::-webkit-scrollbar { width: 0; height: 0; }
+.fxsearch .scfix-nobar { scrollbar-width: none; }
